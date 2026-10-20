@@ -2201,3 +2201,42 @@ msgstr "مرخص کن"
 
 msgid "unbounded_status_waiting"
 msgstr "در انتظار شروع"
+
+msgid "cidr_excludes"
+msgstr "بازه‌های IP / CIDR"
+
+msgid "cidr_excludes_description"
+msgstr "وقتی تونل تفکیکی روشن است، ترافیک شبکه‌های IPv4 و IPv6 این فهرست مستقیم ارسال می‌شود."
+
+msgid "cidr_input_label"
+msgstr "CIDRها را با ویرگول یا در خط‌های جدا وارد کنید"
+
+msgid "cidr_added_count"
+msgstr "%s بازهٔ جدید اضافه شد."
+
+msgid "cidr_import"
+msgstr "وارد کردن"
+
+msgid "cidr_export"
+msgstr "خروجی گرفتن"
+
+msgid "cidr_exported"
+msgstr "خروجی فهرست CIDR ذخیره شد."
+
+msgid "cidr_import_description"
+msgstr "فایل واردشده با این فهرست ادغام می‌شود. از TXT با یک CIDR در هر خط و توضیحات # یا خروجی JSON استفاده کنید."
+
+msgid "cidr_search"
+msgstr "جست‌وجوی بازه‌های IP"
+
+msgid "cidr_retry"
+msgstr "تلاش دوباره"
+
+msgid "cidr_no_ranges"
+msgstr "بازه‌ای برای نمایش وجود ندارد."
+
+msgid "cidr_remove"
+msgstr "حذف بازه"
+
+msgid "cidr_empty_import"
+msgstr "حداقل یک CIDR وارد کنید."

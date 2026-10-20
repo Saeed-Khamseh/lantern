@@ -1486,6 +1486,8 @@ func filterFromTypeAndItems(filterType string, items []string) vpn.SplitTunnelFi
 		return vpn.SplitTunnelFilter{DomainKeyword: items}
 	case vpn.TypeDomainRegex:
 		return vpn.SplitTunnelFilter{DomainRegex: items}
+	case vpn.TypeIPCIDR:
+		return vpn.SplitTunnelFilter{IPCIDR: splitCSVClean(strings.Join(items, ","))}
 	case vpn.TypeProcessName:
 		return vpn.SplitTunnelFilter{ProcessName: items}
 	case vpn.TypeProcessPath:
@@ -1509,6 +1511,8 @@ func itemsForType(filter vpn.SplitTunnelFilter, filterType string) []string {
 		return filter.DomainKeyword
 	case vpn.TypeDomainRegex:
 		return filter.DomainRegex
+	case vpn.TypeIPCIDR:
+		return filter.IPCIDR
 	case vpn.TypeProcessName:
 		return filter.ProcessName
 	case vpn.TypeProcessPath:
@@ -1521,3 +1525,4 @@ func itemsForType(filter vpn.SplitTunnelFilter, filterType string) []string {
 		return nil
 	}
 }
+

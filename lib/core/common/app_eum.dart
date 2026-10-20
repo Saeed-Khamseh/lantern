@@ -46,6 +46,7 @@ enum SplitTunnelFilterType {
   domainSuffix,
   domainKeyword,
   domainRegex,
+  ipCidr,
   processName,
   processPath,
   processPathRegex,
@@ -61,6 +62,8 @@ enum SplitTunnelFilterType {
         return 'domainKeyword';
       case SplitTunnelFilterType.domainRegex:
         return 'domainRegex';
+      case SplitTunnelFilterType.ipCidr:
+        return 'ipCidr';
       case SplitTunnelFilterType.processName:
         return 'processName';
       case SplitTunnelFilterType.processPath:
@@ -172,3 +175,4 @@ extension RoutingModeX on RoutingMode {
     }
   }
 }
+

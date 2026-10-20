@@ -135,6 +135,10 @@ class AppRouter extends RootStackRouter {
       page: WebsiteSplitTunneling.page,
     ),
     AutoRoute(
+      path: '/cidr-split-tunneling',
+      page: CidrSplitTunneling.page,
+    ),
+    AutoRoute(
       path: '/private-server-setup',
       page: PrivateServerSetup.page,
     ),
@@ -194,3 +198,4 @@ class AppRouter extends RootStackRouter {
     ),
   ];
 }
+

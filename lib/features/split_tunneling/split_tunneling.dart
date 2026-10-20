@@ -10,6 +10,7 @@ import 'package:lantern/core/widgets/split_tunneling_tile.dart';
 import 'package:lantern/core/widgets/switch_button.dart';
 import 'package:lantern/features/home/provider/radiance_settings_providers.dart';
 import 'package:lantern/features/split_tunneling/provider/apps_notifier.dart';
+import 'package:lantern/features/split_tunneling/provider/cidr_notifier.dart';
 import 'package:lantern/features/split_tunneling/provider/website_notifier.dart';
 
 @RoutePage(name: 'SplitTunneling')
@@ -30,6 +31,8 @@ class SplitTunneling extends HookConsumerWidget {
     final enabledWebsites =
         (ref.watch(splitTunnelingWebsitesProvider).value ?? const <Website>{})
             .toList(growable: false);
+
+    final cidrCount = ref.watch(splitTunnelingCidrsProvider).value?.length;
 
     void toggleSplitTunneling() {
       ref
@@ -90,6 +93,13 @@ class SplitTunneling extends HookConsumerWidget {
                     actionText: '${enabledWebsites.length} Added',
                     onPressed: () => appRouter.push(WebsiteSplitTunneling()),
                   ),
+                  DividerSpace(),
+                  SplitTunnelingTile(
+                    icon: AppImagePaths.world,
+                    label: 'cidr_excludes'.i18n,
+                    actionText: cidrCount == null ? '—' : '$cidrCount Added',
+                    onPressed: () => appRouter.push(CidrSplitTunneling()),
+                  ),
                 },
               ],
             ),
@@ -99,3 +109,4 @@ class SplitTunneling extends HookConsumerWidget {
     );
   }
 }
+

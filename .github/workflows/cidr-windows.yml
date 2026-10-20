@@ -1,0 +1,187 @@
+name: CIDR Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [cidr-excludes]
+    paths:
+      - 'lib/**'
+      - 'test/**'
+      - 'lantern-core/**'
+      - 'assets/locales/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/cidr-windows.yml'
+      - '.github/scripts/cidr-installer-smoke.ps1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cidr-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: lantern
+    env:
+      BUILD_TYPE: production
+      CL: /MP4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: lantern
+      - name: Checkout CIDR backend
+        uses: actions/checkout@v4
+        with:
+          repository: Saeed-Khamseh/radiance
+          ref: 4b3d73a18d75e2e46469a3079d4218e42e770dc2
+          path: radiance
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: lantern/go.mod
+          cache-dependency-path: |
+            lantern/go.sum
+            radiance/go.sum
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: '3.41.0'
+          cache: true
+      - name: Configure Windows compiler
+        shell: bash
+        run: bash scripts/ci/setup-windows-toolchain.sh
+      - name: Prepare version and public app settings
+        shell: pwsh
+        run: |
+          $version = '10.0.3+' + (10000 + [int]$env:GITHUB_RUN_NUMBER)
+          $pubspec = Get-Content -LiteralPath pubspec.yaml -Raw
+          $pubspec = $pubspec -replace '(?m)^version:.*$', "version: $version"
+          [IO.File]::WriteAllText((Join-Path $PWD 'pubspec.yaml'), $pubspec)
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "VERSION=10.0.3" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          @(
+            'WINDOWS_APP_USER_MODEL_ID=org.getlantern.lantern'
+            'WINDOWS_GUID=5B599538-42C1-4026-A579-AF079F21A65E'
+          ) | Set-Content -LiteralPath app.env -Encoding utf8
+          flutter config --enable-windows-desktop
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter configuration failed' }
+          go mod tidy
+          if ($LASTEXITCODE -ne 0) { throw 'Go module validation failed' }
+      - name: Resolve Flutter dependencies and generate routes
+        shell: pwsh
+        run: |
+          flutter pub get
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter dependencies failed' }
+          dart run build_runner build --delete-conflicting-outputs
+          if ($LASTEXITCODE -ne 0) { throw 'Route generation failed' }
+          dart format lib/features/split_tunneling/cidr_list.dart lib/features/split_tunneling/cidr_split_tunneling.dart lib/features/split_tunneling/provider/cidr_notifier.dart test/features/split_tunneling/cidr_list_test.dart test/features/split_tunneling/cidr_notifier_test.dart test/features/split_tunneling/cidr_screen_test.dart
+          if ($LASTEXITCODE -ne 0) { throw 'Dart formatting failed' }
+      - name: Analyze and test CIDR UI and import/export
+        shell: pwsh
+        run: |
+          flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter analysis failed' }
+          flutter test --no-pub test/features/split_tunneling/
+          if ($LASTEXITCODE -ne 0) { throw 'CIDR Flutter tests failed' }
+      - name: Test native bridge and backend routing
+        shell: pwsh
+        env:
+          CGO_ENABLED: '1'
+        run: |
+          go test -tags with_gvisor,with_quic,with_wireguard,with_utls,with_grpc ./lantern-core -timeout=10m
+          if ($LASTEXITCODE -ne 0) { throw 'Native bridge tests failed' }
+          Push-Location ../radiance
+          try {
+            go test -tags with_gvisor,with_quic,with_wireguard,with_utls,with_grpc ./vpn -run 'TestCIDR|TestAddRemove|TestRemoveItems|TestFilterPersistence|TestPolicy|TestEmptyFilter|TestEnableDisable' -count=1 -timeout=15m
+            if ($LASTEXITCODE -ne 0) { throw 'CIDR routing tests failed' }
+          } finally { Pop-Location }
+      - name: Build Windows application and daemon
+        shell: pwsh
+        run: |
+          make windows
+          if ($LASTEXITCODE -ne 0) { throw 'Go DLL build failed' }
+          make build-windows-release prepare-windows-release
+          if ($LASTEXITCODE -ne 0) { throw 'Windows release build failed' }
+          $env:CGO_ENABLED = '0'
+          go build -tags with_gvisor,with_quic,with_wireguard,with_utls,with_grpc -o cidr-cli.exe github.com/getlantern/radiance/cmd/lantern
+          if ($LASTEXITCODE -ne 0) { throw 'IPC smoke CLI build failed' }
+      - name: Package installer
+        shell: pwsh
+        run: |
+          $inno = 'C:\Program Files (x86)\Inno Setup 6'
+          if (-not (Test-Path -LiteralPath (Join-Path $inno 'ISCC.exe'))) {
+            choco install innosetup --yes --version=6.7.1 --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+          }
+          foreach ($name in 'Farsi.isl','ChineseSimplified.isl') {
+            Copy-Item -LiteralPath "windows/packaging/exe/isl/$name" -Destination (Join-Path $inno "Languages/$name") -Force
+          }
+          dart pub global activate fastforge
+          if ($LASTEXITCODE -ne 0) { throw 'Fastforge setup failed' }
+          $pubBin = Join-Path $env:PUB_CACHE 'bin'
+          $env:PATH = "$pubBin;$env:PATH"
+          fastforge package --platform=windows --targets=exe --skip-clean --build-dart-define=BUILD_TYPE=production --build-dart-define=VERSION=10.0.3
+          if ($LASTEXITCODE -ne 0) { throw 'Installer packaging failed' }
+          $name = "Lantern-CIDR-$env:APP_VERSION-windows-x64-setup.exe"
+          Copy-Item -LiteralPath "dist/$env:APP_VERSION/lantern-$env:APP_VERSION-windows-setup.exe" -Destination $name
+          "CIDR_INSTALLER=$name" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $hash = (Get-FileHash -LiteralPath $name -Algorithm SHA256).Hash.ToLower()
+          "$hash  $name" | Set-Content -LiteralPath "$name.sha256" -Encoding ascii
+          Compress-Archive -Path 'build/windows/x64/runner/Release/*' -DestinationPath 'Lantern-CIDR-windows-x64-app.zip'
+      - name: Smoke-test the packaged installer
+        shell: pwsh
+        run: ./.github/scripts/cidr-installer-smoke.ps1 -InstallerPath $env:CIDR_INSTALLER -CliPath ./cidr-cli.exe
+      - name: Upload installer and application folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lantern-CIDR-Windows
+          path: |
+            lantern/Lantern-CIDR-*-setup.exe
+            lantern/Lantern-CIDR-*-setup.exe.sha256
+            lantern/Lantern-CIDR-windows-x64-app.zip
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CIDR-build-diagnostics
+          path: |
+            lantern/go.mod
+            lantern/go.sum
+            lantern/pubspec.yaml
+            lantern/lib/core/router/router.gr.dart
+            lantern/build/cidr-*.log
+          if-no-files-found: ignore
+
+  release:
+    needs: windows
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lantern-CIDR-Windows
+          path: release-files
+      - name: Publish tested personal build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_TAG: cidr-build-${{ github.run_number }}-${{ github.run_attempt }}
+          SOURCE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          printf '%s\n' \
+            'Personal Lantern fork with IPv4/IPv6 CIDR exclusions and TXT/JSON import/export.' \
+            'Built and tested on GitHub-hosted Windows runners. This build is unsigned.' \
+            'Backend source: https://github.com/Saeed-Khamseh/radiance/tree/4b3d73a18d75e2e46469a3079d4218e42e770dc2' \
+            > release-notes.md
+          gh release create "$BUILD_TAG" release-files/* \
+            --repo "$GH_REPO" --target "$SOURCE_SHA" \
+            --title "Lantern CIDR Windows build $BUILD_TAG" --notes-file release-notes.md

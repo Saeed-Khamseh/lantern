@@ -2114,3 +2114,42 @@ msgstr "Sharing mode"
 # mapping but isn't forwarding traffic to this computer."
 msgid "advanced_stats_mode_fallback"
 msgstr "Direct connection unavailable: %s"
+
+msgid "cidr_excludes"
+msgstr "IP ranges / CIDR"
+
+msgid "cidr_excludes_description"
+msgstr "Send matching IPv4 and IPv6 networks directly while Split Tunneling is enabled."
+
+msgid "cidr_input_label"
+msgstr "CIDRs, separated by commas or new lines"
+
+msgid "cidr_added_count"
+msgstr "Added %s new CIDRs."
+
+msgid "cidr_import"
+msgstr "Import"
+
+msgid "cidr_export"
+msgstr "Export"
+
+msgid "cidr_exported"
+msgstr "CIDR list exported."
+
+msgid "cidr_import_description"
+msgstr "Import merges with this list. Use TXT (one CIDR per line, # comments allowed) or a CIDR JSON export."
+
+msgid "cidr_search"
+msgstr "Search IP ranges"
+
+msgid "cidr_retry"
+msgstr "Retry"
+
+msgid "cidr_no_ranges"
+msgstr "No matching IP ranges."
+
+msgid "cidr_remove"
+msgstr "Remove range"
+
+msgid "cidr_empty_import"
+msgstr "Enter at least one CIDR."

@@ -342,3 +342,6 @@ require (
 	modernc.org/sqlite v1.21.2 // indirect
 	zombiezen.com/go/sqlite v0.13.1 // indirect
 )
+
+replace github.com/getlantern/radiance => ../radiance
+
