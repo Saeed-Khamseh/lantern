@@ -60,4 +60,3 @@ class SplitTunnelingCidrs extends AsyncNotifier<List<String>> {
     state = AsyncData(await _load());
   }
 }
-

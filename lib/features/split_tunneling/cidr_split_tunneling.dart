@@ -124,84 +124,88 @@ class _CidrSplitTunnelingState extends ConsumerState<CidrSplitTunneling> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-          Text('cidr_excludes_description'.i18n),
-          const SizedBox(height: 12),
-          TextField(
-            key: const Key('split_tunneling.cidr.input'),
-            controller: _input,
-            enabled: !_busy && cidrs.hasValue,
-            minLines: 1,
-            maxLines: 3,
-            autocorrect: false,
-            textDirection: TextDirection.ltr,
-            decoration: InputDecoration(
-              labelText: 'cidr_input_label'.i18n,
-              hintText: '127.0.0.0/8, ::1/128',
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              FilledButton.icon(
-                key: const Key('split_tunneling.cidr.add'),
-                onPressed: _busy || !cidrs.hasValue
-                    ? null
-                    : () => _run(() async {
-                        final entries = CidrList.decode(_input.text);
-                        if (entries.isEmpty) {
-                          throw FormatException('cidr_empty_import'.i18n);
-                        }
-                        await _add(entries);
-                      }),
-                icon: const Icon(Icons.add),
-                label: Text('add'.i18n),
-              ),
-              OutlinedButton.icon(
-                key: const Key('split_tunneling.cidr.import'),
-                onPressed: _busy || !cidrs.hasValue
-                    ? null
-                    : () => _run(_import),
-                icon: const Icon(Icons.file_open_outlined),
-                label: Text('cidr_import'.i18n),
-              ),
-              PopupMenuButton<String>(
-                key: const Key('split_tunneling.cidr.export'),
-                enabled: !_busy && cidrs.hasValue,
-                tooltip: 'cidr_export'.i18n,
-                onSelected: (format) => _run(() => _export(format)),
-                itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'json', child: Text('JSON')),
-                  const PopupMenuItem(value: 'txt', child: Text('TXT')),
-                ],
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text('cidr_export'.i18n),
+                Text('cidr_excludes_description'.i18n),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('split_tunneling.cidr.input'),
+                  controller: _input,
+                  enabled: !_busy && cidrs.hasValue,
+                  minLines: 1,
+                  maxLines: 3,
+                  autocorrect: false,
+                  textDirection: TextDirection.ltr,
+                  decoration: InputDecoration(
+                    labelText: 'cidr_input_label'.i18n,
+                    hintText: '127.0.0.0/8, ::1/128',
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          if (_busy) const LinearProgressIndicator(),
-          const SizedBox(height: 8),
-          Text('cidr_import_description'.i18n),
-          const SizedBox(height: 12),
-          TextField(
-            key: const Key('split_tunneling.cidr.search'),
-            onChanged: (value) => setState(() => _query = value.toLowerCase()),
-            decoration: InputDecoration(
-              hintText: 'cidr_search'.i18n,
-              prefixIcon: const Icon(Icons.search),
-            ),
-          ),
-          const SizedBox(height: 8),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    FilledButton.icon(
+                      key: const Key('split_tunneling.cidr.add'),
+                      onPressed: _busy || !cidrs.hasValue
+                          ? null
+                          : () => _run(() async {
+                              final entries = CidrList.decode(_input.text);
+                              if (entries.isEmpty) {
+                                throw FormatException('cidr_empty_import'.i18n);
+                              }
+                              await _add(entries);
+                            }),
+                      icon: const Icon(Icons.add),
+                      label: Text('add'.i18n),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('split_tunneling.cidr.import'),
+                      onPressed: _busy || !cidrs.hasValue
+                          ? null
+                          : () => _run(_import),
+                      icon: const Icon(Icons.file_open_outlined),
+                      label: Text('cidr_import'.i18n),
+                    ),
+                    PopupMenuButton<String>(
+                      key: const Key('split_tunneling.cidr.export'),
+                      enabled: !_busy && cidrs.hasValue,
+                      tooltip: 'cidr_export'.i18n,
+                      onSelected: (format) => _run(() => _export(format)),
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(value: 'json', child: Text('JSON')),
+                        const PopupMenuItem(value: 'txt', child: Text('TXT')),
+                      ],
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text('cidr_export'.i18n),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_busy) const LinearProgressIndicator(),
+                const SizedBox(height: 8),
+                Text('cidr_import_description'.i18n),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('split_tunneling.cidr.search'),
+                  onChanged: (value) =>
+                      setState(() => _query = value.toLowerCase()),
+                  decoration: InputDecoration(
+                    hintText: 'cidr_search'.i18n,
+                    prefixIcon: const Icon(Icons.search),
+                  ),
+                ),
+                const SizedBox(height: 8),
               ],
             ),
           ),
           cidrs.when(
-              loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-              error: (error, _) => SliverFillRemaining(child: Center(
+            loading: () => const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, _) => SliverFillRemaining(
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -213,41 +217,43 @@ class _CidrSplitTunnelingState extends ConsumerState<CidrSplitTunneling> {
                     ),
                   ],
                 ),
-              )),
-              data: (entries) {
-                final shown = entries
-                    .where((cidr) => cidr.contains(_query))
-                    .toList();
-                if (shown.isEmpty) {
-                  return SliverFillRemaining(child: Center(child: Text('cidr_no_ranges'.i18n)));
-                }
-                return SliverList.builder(
-                  key: const Key('split_tunneling.cidr.list'),
-                  itemCount: shown.length,
-                  itemBuilder: (context, index) {
-                    final cidr = shown[index];
-                    return ListTile(
-                      title: Text(cidr, textDirection: TextDirection.ltr),
-                      trailing: IconButton(
-                        key: Key('split_tunneling.cidr.remove.$cidr'),
-                        tooltip: 'cidr_remove'.i18n,
-                        icon: const Icon(Icons.close),
-                        onPressed: _busy
-                            ? null
-                            : () => _run(
-                                () => ref
-                                    .read(splitTunnelingCidrsProvider.notifier)
-                                    .remove(cidr),
-                              ),
-                      ),
-                    );
-                  },
+              ),
+            ),
+            data: (entries) {
+              final shown = entries
+                  .where((cidr) => cidr.contains(_query))
+                  .toList();
+              if (shown.isEmpty) {
+                return SliverFillRemaining(
+                  child: Center(child: Text('cidr_no_ranges'.i18n)),
                 );
-              },
+              }
+              return SliverList.builder(
+                key: const Key('split_tunneling.cidr.list'),
+                itemCount: shown.length,
+                itemBuilder: (context, index) {
+                  final cidr = shown[index];
+                  return ListTile(
+                    title: Text(cidr, textDirection: TextDirection.ltr),
+                    trailing: IconButton(
+                      key: Key('split_tunneling.cidr.remove.$cidr'),
+                      tooltip: 'cidr_remove'.i18n,
+                      icon: const Icon(Icons.close),
+                      onPressed: _busy
+                          ? null
+                          : () => _run(
+                              () => ref
+                                  .read(splitTunnelingCidrsProvider.notifier)
+                                  .remove(cidr),
+                            ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
     );
   }
 }
-

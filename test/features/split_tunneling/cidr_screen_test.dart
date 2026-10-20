@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,7 +37,9 @@ Future<void> _pump(WidgetTester tester, Size size) async {
   addTearDown(tester.view.resetPhysicalSize);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [splitTunnelingCidrsProvider.overrideWith(() => _Cidrs(['127.0.0.0/8']))],
+      overrides: [
+        splitTunnelingCidrsProvider.overrideWith(() => _Cidrs(['127.0.0.0/8'])),
+      ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),
         builder: (_, _) => MaterialApp(
@@ -61,14 +62,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('adds canonical networks and removes a selected range', (tester) async {
+  testWidgets('adds canonical networks and removes a selected range', (
+    tester,
+  ) async {
     await _pump(tester, const Size(471, 984));
-    await tester.enterText(find.byKey(const Key('split_tunneling.cidr.input')), '192.168.1.25/24, ::1/128');
+    await tester.enterText(
+      find.byKey(const Key('split_tunneling.cidr.input')),
+      '192.168.1.25/24, ::1/128',
+    );
     await tester.tap(find.byKey(const Key('split_tunneling.cidr.add')));
     await tester.pumpAndSettle();
     expect(find.text('192.168.1.0/24'), findsOneWidget);
     expect(find.text('::1/128'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('split_tunneling.cidr.remove.::1/128')));
+    await tester.tap(
+      find.byKey(const Key('split_tunneling.cidr.remove.::1/128')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('::1/128'), findsNothing);
     expect(find.text('127.0.0.0/8'), findsOneWidget);

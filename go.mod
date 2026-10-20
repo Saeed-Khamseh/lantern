@@ -344,4 +344,3 @@ require (
 )
 
 replace github.com/getlantern/radiance => ../radiance
-

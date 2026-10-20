@@ -108,4 +108,3 @@ void main() {
     expect(container.read(splitTunnelingCidrsProvider).requireValue, isEmpty);
   });
 }
-

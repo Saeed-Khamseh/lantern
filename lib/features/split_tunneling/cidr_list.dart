@@ -93,4 +93,3 @@ class CidrList {
     return cidrs.isEmpty ? '' : '${cidrs.join('\n')}\n';
   }
 }
-
