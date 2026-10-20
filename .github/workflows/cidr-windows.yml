@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Saeed-Khamseh/radiance
-          ref: 4b3d73a18d75e2e46469a3079d4218e42e770dc2
+          ref: fab5d41cdb7b787b70ab4003e634d55ab9786988
           path: radiance
       - uses: actions/setup-go@v5
         with:
@@ -180,7 +180,7 @@ jobs:
           printf '%s\n' \
             'Personal Lantern fork with IPv4/IPv6 CIDR exclusions and TXT/JSON import/export.' \
             'Built and tested on GitHub-hosted Windows runners. This build is unsigned.' \
-            'Backend source: https://github.com/Saeed-Khamseh/radiance/tree/4b3d73a18d75e2e46469a3079d4218e42e770dc2' \
+            'Backend source: https://github.com/Saeed-Khamseh/radiance/tree/fab5d41cdb7b787b70ab4003e634d55ab9786988' \
             > release-notes.md
           gh release create "$BUILD_TAG" release-files/* \
             --repo "$GH_REPO" --target "$SOURCE_SHA" \
